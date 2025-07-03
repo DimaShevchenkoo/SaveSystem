@@ -2,10 +2,8 @@
 
 #include "Components/SS_AutoIDComponent.h"
 
-void USS_AutoIDComponent::OnRegister()
+void USS_AutoIDComponent::AssignID()
 {
-	Super::OnRegister();
-
 	if (ActorID.IsEmpty())
 	{
 		ActorID = FGuid::NewGuid().ToString(EGuidFormats::Digits);
