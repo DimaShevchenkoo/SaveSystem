@@ -6,7 +6,6 @@
 #include "Components/ActorComponent.h"
 #include "SS_AutoIDComponent.generated.h"
 
-
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SAVESYSTEM_API USS_AutoIDComponent : public UActorComponent
 {
@@ -16,5 +15,5 @@ public:
 	UPROPERTY(VisibleAnywhere, SaveGame)
 	FString ActorID;
 
-	virtual void OnRegister() override;
+	void AssignID();
 };

@@ -27,9 +27,4 @@ protected:
 	// Save System
 	UPROPERTY()
 	TObjectPtr<USS_AutoIDComponent> AutoIDComponent;
-
-	int32 CustomHealth = 100;
-	bool bIsTrue = false;
-	float Random = 0.f;
-	FString Str;
 };

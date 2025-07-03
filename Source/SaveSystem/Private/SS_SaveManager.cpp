@@ -30,7 +30,7 @@ void USS_SaveManager::SaveGame(UWorld* World, const FString& SlotName, bool bAsy
 
 			// Now JsonString contains your JSON as text
 			UE_LOG(LogTemp, Warning, TEXT("%s"), *CustomData);
-			Data.CustomData.Add(CustomData);
+			Data.CustomData = CustomData;
 			ISS_SavableInterface::Execute_Save(Actor, Data);
 			SaveGameInstance->SavedActors.Add(Data);
 		}

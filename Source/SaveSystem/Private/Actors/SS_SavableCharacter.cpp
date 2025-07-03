@@ -23,3 +23,8 @@ void ASS_SavableCharacter::Load_Implementation(const FSaveData& InData) {
 	SetActorLocation(InData.Location);
 	SetActorRotation(InData.Rotation);
 }
+
+void ASS_SavableCharacter::AssignID()
+{
+	ISS_SavableInterface::AssignID();
+}

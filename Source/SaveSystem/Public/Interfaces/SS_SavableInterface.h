@@ -24,7 +24,7 @@ struct FSaveData
 	FString ActorID;
 
 	UPROPERTY()
-	TArray<FString> CustomData;
+	FString CustomData;
 };
 
 UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_Save_ToSpawn);
@@ -47,4 +47,5 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Save")
 	void Load(const FSaveData& InData);
 
+	virtual void AssignID();
 };
