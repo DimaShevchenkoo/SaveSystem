@@ -177,14 +177,18 @@ public:
 			const void* Map = MapProp->ContainerPtrToValuePtr<void>(Container);
 
 			FScriptMapHelper Helper(MapProp, Map);
-			for (int32 i = 0; i < Helper.Num(); ++i)
+			for (int32 i = 0; i < Helper.GetMaxIndex(); ++i)
 			{
+				if (!Helper.IsValidIndex(i))
+					continue;
+
+				const void* KeyPtr = Helper.GetKeyPtr(i);
 				const void* ValuePtr = Helper.GetValuePtr(i);
 
-				MapObject->SetField(
-					GetPropertyAsString(Helper.GetKeyProperty(), Helper.GetKeyPtr(i)),
-					GetJsonValueFromProperty(ValuePtr, Helper.GetValueProperty())
-				);
+				const FString KeyStr = GetPropertyAsString(MapProp->KeyProp, KeyPtr);
+				const TSharedPtr<FJsonValue> JsonValue = GetJsonValueFromDirectPtr(ValuePtr, MapProp->ValueProp);
+
+				MapObject->SetField(KeyStr, JsonValue);
 			}
 			return MakeShared<FJsonValueObject>(MapObject);
 		}
@@ -219,6 +223,62 @@ public:
 
 
 		UE_LOG(LogTemp, Warning, TEXT("Unknown save type: %s"), *Property->GetCPPType())
+		return MakeShared<FJsonValueNull>();
+	}
+
+	static TSharedPtr<FJsonValue> GetJsonValueFromDirectPtr(const void* ValuePtr, const FProperty* Property)
+	{
+		if (const FIntProperty* IntProp = CastField<FIntProperty>(Property))
+		{
+			return MakeShared<FJsonValueNumber>(IntProp->GetPropertyValue(ValuePtr));
+		}
+		
+		if (const FByteProperty* ByteProp = CastField<FByteProperty>(Property))
+		{
+			if (ByteProp->IsEnum())
+			{
+				// Not sure if this does anything???
+				UE_LOG(LogTemp, Warning, TEXT("GetJsonValueFromProperty ENUM????????????: %s"), *Property->GetCPPType())
+				const UEnum* Enum = ByteProp->GetIntPropertyEnum();
+				const uint8 Value = ByteProp->GetPropertyValue(ValuePtr);
+				return MakeShared<FJsonValueString>(Enum->GetNameStringByValue(Value));
+			}
+			return MakeShared<FJsonValueNumber>(ByteProp->GetPropertyValue(ValuePtr));
+		}
+
+		if (const FEnumProperty* EnumProp = CastField<FEnumProperty>(Property))
+		{
+			const int64 EnumValue = EnumProp->GetUnderlyingProperty()->GetSignedIntPropertyValue(ValuePtr);
+			return MakeShared<FJsonValueString>(EnumProp->GetEnum()->GetNameStringByValue(EnumValue));
+		}
+
+		if (const FFloatProperty* FloatProp = CastField<FFloatProperty>(Property))
+		{
+			return MakeShared<FJsonValueNumber>(FloatProp->GetPropertyValue(ValuePtr));
+		}
+
+		if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(Property))
+		{
+			return MakeShared<FJsonValueBoolean>(BoolProp->GetPropertyValue(ValuePtr));
+		}
+
+		if (const FStrProperty* StrProp = CastField<FStrProperty>(Property))
+		{
+			return MakeShared<FJsonValueString>(StrProp->GetPropertyValue(ValuePtr));
+		}
+
+		if (const FTextProperty* TextProp = CastField<FTextProperty>(Property))
+		{
+			return MakeShared<FJsonValueString>(TextProp->GetPropertyValue(ValuePtr).ToString());
+		}
+
+		if (const FNameProperty* NameProp = CastField<FNameProperty>(Property))
+		{
+			return MakeShared<FJsonValueString>(NameProp->GetPropertyValue(ValuePtr).ToString());
+		}
+
+		// Unsupported key type
+		UE_LOG(LogTemp, Warning, TEXT("Unsupported value, %p"), ValuePtr);
 		return MakeShared<FJsonValueNull>();
 	}
 
