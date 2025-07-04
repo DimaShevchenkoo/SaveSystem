@@ -22,10 +22,10 @@ void USS_SaveManager::SaveGame(const FString& SlotName, bool bAsync)
 
 	for (const TPair<FGuid, TWeakObjectPtr<AActor>>& Pair : SavableActors)
 	{
-		if (const AActor* Actor = Pair.Value.Get(); Actor && Actor->Implements<USS_SavableInterface>())
+		if (const TWeakObjectPtr<AActor> ActorPtr = Pair.Value; ActorPtr.IsValid() && ActorPtr.Get()->Implements<USS_SavableInterface>())
 		{
+			const AActor* Actor = ActorPtr.Get();
 			FSaveData Data;
-
 			FString CustomData;
 			TSharedPtr<FJsonObject> GeneratedCustomData = UJsonUtils::GenerateCustomData(Actor);
 			TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&CustomData);
@@ -108,6 +108,7 @@ void USS_SaveManager::SetListOfSavableActors()
 			SavableActors.Add(ISS_SavableInterface::Execute_GetID(*It), *It);
 		}
 	}
+	UE_LOG(LogTemp, Log, TEXT("Objects found for saving: %d"), SavableActors.Num());
 }
 
 void USS_SaveManager::OnLoadFinished(const FString& SlotName, const int32 UserIndex, USaveGame* LoadedGame)
@@ -120,7 +121,22 @@ void USS_SaveManager::OnLoadFinished(const FString& SlotName, const int32 UserIn
 
 void USS_SaveManager::ApplyLoadedData(USS_SaveGame* Loaded)
 {
-	DestroyedPersistentActors = Loaded->DestroyedPersistentActors;
+	DestroyedPersistentActors = {};
+	TSet<FGuid> IDsToDestroy = Loaded->DestroyedPersistentActors;
+	for (FGuid ID : IDsToDestroy)
+	{
+		if (!SavableActors.Contains(ID))
+		{
+			UE_LOG(LogTemp, Log, TEXT("No object found for destroyed ID: %s, Name: "), *Loaded->SlotName);
+			continue;
+		}
+		const TWeakObjectPtr<AActor>* TargetActorPtr = SavableActors.Find(ID);
+		if (!TargetActorPtr->IsValid() || !IsValid(TargetActorPtr->Get()) || !TargetActorPtr->Get()->Implements<USS_SavableInterface>())
+		{
+			continue;
+		}
+		TargetActorPtr->Get()->Destroy();
+	}
 
 	for (const FSaveData& Data : Loaded->SavedActors)
 	{
@@ -131,19 +147,12 @@ void USS_SaveManager::ApplyLoadedData(USS_SaveGame* Loaded)
 			UE_LOG(LogTemp, Log, TEXT("No object found for ID: %s, Name: "), *Loaded->SlotName);
 			continue;
 		}
-		const TWeakObjectPtr<AActor>* Actor = SavableActors.Find(ID);
-		
-		if (!Actor->IsValid() || !Actor->Get()->Implements<USS_SavableInterface>())
+		const TWeakObjectPtr<AActor>* TargetActorPtr = SavableActors.Find(ID);
+		if (!TargetActorPtr->IsValid() || !IsValid(TargetActorPtr->Get()) || !TargetActorPtr->Get()->Implements<USS_SavableInterface>())
 		{
 			continue;
 		}
-		AActor* TargetActor = Actor->Get();
-
-		if (DestroyedPersistentActors.Contains(ID))
-		{
-			TargetActor->Destroy();
-			continue;
-		}
+		AActor* TargetActor = TargetActorPtr->Get();
 
 		// Spawn
 		if (!TargetActor)
