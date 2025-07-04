@@ -90,48 +90,28 @@ public:
 				for (TFieldIterator<FProperty> It(ObjectInstance->GetClass()); It; ++It)
 				{
 					LoadJsonValueFromProperty(*ObjectValue, ObjectInstance, *It);
-					// UClass* ObjectClass = ObjectProp->PropertyClass;
-					// UObject* NewSubobject = NewObject<UObject>(Target, ObjectClass);
-					//
-					// // Set it on the container
-					// ObjectProp->SetObjectPropertyValue_InContainer(Target, NewSubobject);
-					// ObjectInstance = NewSubobject;
 				}
 			}
 		}
 
 		else if (const FSetProperty* SetProp = CastField<FSetProperty>(Property))
 		{
+			// TODO
 		}
 
 		else if (const FArrayProperty* ArrayProp = CastField<FArrayProperty>(Property))
 		{
-			// const TArray<TSharedPtr<FJsonValue>>* JsonArray;
-			// if (JsonObject->TryGetArrayField(PropertyName, JsonArray))
-			// {
-			// 	void* ArrayPtr = ArrayProp->ContainerPtrToValuePtr<void>(Target);
-			//
-			// 	// Хелпер для работы с массивами
-			// 	FScriptArrayHelper Helper(ArrayProp, ArrayPtr);
-			//
-			// 	Helper.Resize(JsonArray->Num());
-			//
-			// 	for (int32 i = 0; i < JsonArray->Num(); ++i)
-			// 	{
-			// 		const TSharedPtr<FJsonValue>& JsonValue = (*JsonArray)[i];
-			// 		FProperty* InnerProp = ArrayProp->Inner;
-			// 		void* ElementPtr = Helper.GetRawPtr(i);
-			// 		LoadJsonValueFromProperty(JsonValue);
-			// 	}
-			// }
+			// TODO
 		}
 
 		else if (const FMapProperty* MapProp = CastField<FMapProperty>(Property))
 		{
+			// TODO
 		}
 
 		else if (const FStructProperty* StructProp = CastField<FStructProperty>(Property))
 		{
+			// TODO
 		}
 	}
 

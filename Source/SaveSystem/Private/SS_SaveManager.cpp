@@ -92,7 +92,7 @@ void USS_SaveManager::AddSavableActor(AActor* Actor)
 {
 	if (IsValid(Actor) && Actor->Implements<USS_SavableInterface>())
 	{
-		FGuid ID = ISS_SavableInterface::Execute_GetID(Actor);
+		const FGuid ID = ISS_SavableInterface::Execute_GetID(Actor);
 		SavableActors.Add(ID, Actor);
 		// Just in case
 		DestroyedPersistentActors.Remove(ID);
@@ -157,34 +157,7 @@ void USS_SaveManager::ApplyLoadedData(USS_SaveGame* Loaded)
 		// Spawn
 		if (!TargetActor)
 		{
-			UClass* Class = LoadObject<UClass>(nullptr, *Data.ActorClass);
-			if (!Class) continue;
-
-			UObject* CDO = Class->GetDefaultObject();
-			if (HasGameplayTag(CDO, TAG_Save_ToSpawn))
-			{
-				TargetActor = GetWorld()->SpawnActor<AActor>(Class, Data.Location, Data.Rotation);
-
-				if (TargetActor)
-				{
-					if (USS_IDComponent* IDComp = TargetActor->FindComponentByClass<USS_IDComponent>())
-					{
-						IDComp->ID = ID;
-					}
-					else
-					{
-						IDComp = NewObject<USS_IDComponent>(TargetActor);
-						IDComp->RegisterComponent();
-						TargetActor->AddInstanceComponent(IDComp);
-						IDComp->ID = ID;
-					}
-				}
-			}
-			else
-			{
-				// if tag doesn't exist, it means that it's a static actor - so we don't spawn it
-				// just skip the spawn
-			}
+			// TODO
 		}
 
 		// Load data
