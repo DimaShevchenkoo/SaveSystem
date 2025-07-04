@@ -14,7 +14,7 @@ class SAVESYSTEM_API UJsonUtils : public UObject
 	GENERATED_BODY()
 
 public:
-	static void LoadJsonValueFromProperty(const TSharedPtr<FJsonObject>& JsonObject, AActor* Actor,
+	static void LoadJsonValueFromProperty(const TSharedPtr<FJsonObject>& JsonObject, void* Target,
 	                                      FProperty* Property, const bool bToDirectPtr = false)
 	{
 		const FString PropertyName = Property->GetName();
@@ -23,8 +23,8 @@ public:
 			int32 Number;
 			JsonObject->TryGetNumberField(PropertyName, Number);
 			bToDirectPtr
-				? IntProp->SetPropertyValue(Actor, Number)
-				: IntProp->SetPropertyValue_InContainer(Actor, Number);
+				? IntProp->SetPropertyValue(Target, Number)
+				: IntProp->SetPropertyValue_InContainer(Target, Number);
 		}
 
 		else if (const FByteProperty* ByteProp = CastField<FByteProperty>(Property))
@@ -32,8 +32,8 @@ public:
 			uint8 Byte;
 			JsonObject->TryGetNumberField(PropertyName, Byte);
 			bToDirectPtr
-				? ByteProp->SetPropertyValue(Actor, Byte)
-				: ByteProp->SetPropertyValue_InContainer(Actor, Byte);
+				? ByteProp->SetPropertyValue(Target, Byte)
+				: ByteProp->SetPropertyValue_InContainer(Target, Byte);
 		}
 
 		else if (const FFloatProperty* FloatProp = CastField<FFloatProperty>(Property))
@@ -41,8 +41,8 @@ public:
 			float Floaty;
 			JsonObject->TryGetNumberField(PropertyName, Floaty);
 			bToDirectPtr
-				? FloatProp->SetPropertyValue(Actor, Floaty)
-				: FloatProp->SetPropertyValue_InContainer(Actor, Floaty);
+				? FloatProp->SetPropertyValue(Target, Floaty)
+				: FloatProp->SetPropertyValue_InContainer(Target, Floaty);
 		}
 
 		else if (const FBoolProperty* BoolProp = CastField<FBoolProperty>(Property))
@@ -50,8 +50,8 @@ public:
 			bool Bool;
 			JsonObject->TryGetBoolField(PropertyName, Bool);
 			bToDirectPtr
-				? BoolProp->SetPropertyValue(Actor, Bool)
-				: BoolProp->SetPropertyValue_InContainer(Actor, Bool);
+				? BoolProp->SetPropertyValue(Target, Bool)
+				: BoolProp->SetPropertyValue_InContainer(Target, Bool);
 		}
 
 		else if (const FStrProperty* StrProp = CastField<FStrProperty>(Property))
@@ -59,30 +59,29 @@ public:
 			FString String;
 			JsonObject->TryGetStringField(PropertyName, String);
 			bToDirectPtr
-				? StrProp->SetPropertyValue(Actor, String)
-				: StrProp->SetPropertyValue_InContainer(Actor, String);
+				? StrProp->SetPropertyValue(Target, String)
+				: StrProp->SetPropertyValue_InContainer(Target, String);
 		}
 
 		else if (const FTextProperty* TextProp = CastField<FTextProperty>(Property))
 		{
 			FString Text;
 			JsonObject->TryGetStringField(PropertyName, Text);
-			bToDirectPtr ? StrProp->SetPropertyValue(Actor, Text) : StrProp->SetPropertyValue_InContainer(Actor, Text);
+			bToDirectPtr ? TextProp->SetPropertyValue(Target, FText::FromString(Text)) : TextProp->SetPropertyValue_InContainer(Target, FText::FromString(Text));
 		}
 
 		else if (const FNameProperty* NameProp = CastField<FNameProperty>(Property))
 		{
 			FString Name;
 			JsonObject->TryGetStringField(PropertyName, Name);
-			bToDirectPtr ? StrProp->SetPropertyValue(Actor, Name) : StrProp->SetPropertyValue_InContainer(Actor, Name);
+			bToDirectPtr ? NameProp->SetPropertyValue(Target, FName(*Name)) : NameProp->SetPropertyValue_InContainer(Target, FName(*Name));
 		}
 
 		else if (const FObjectProperty* ObjectProp = CastField<FObjectProperty>(Property))
 		{
-			const TSharedPtr<FJsonObject>* ObjectValue;
-			if (JsonObject->TryGetObjectField(PropertyName, ObjectValue))
+			if (const TSharedPtr<FJsonObject>* ObjectValue; JsonObject->TryGetObjectField(PropertyName, ObjectValue))
 			{
-				const UObject* ObjectInstance = ObjectProp->GetObjectPropertyValue_InContainer(Actor);
+				UObject* ObjectInstance = ObjectProp->GetObjectPropertyValue_InContainer(Target);
 				if (!ObjectInstance)
 				{
 					UE_LOG(LogTemp, Warning, TEXT("ObjectProperty is null for %s"), *PropertyName);
@@ -90,7 +89,13 @@ public:
 				}
 				for (TFieldIterator<FProperty> It(ObjectInstance->GetClass()); It; ++It)
 				{
-					LoadJsonValueFromProperty(*ObjectValue, Actor, *It);
+					LoadJsonValueFromProperty(*ObjectValue, ObjectInstance, *It);
+					// UClass* ObjectClass = ObjectProp->PropertyClass;
+					// UObject* NewSubobject = NewObject<UObject>(Target, ObjectClass);
+					//
+					// // Set it on the container
+					// ObjectProp->SetObjectPropertyValue_InContainer(Target, NewSubobject);
+					// ObjectInstance = NewSubobject;
 				}
 			}
 		}
@@ -101,24 +106,24 @@ public:
 
 		else if (const FArrayProperty* ArrayProp = CastField<FArrayProperty>(Property))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* JsonArray;
-			if (JsonObject->TryGetArrayField(PropertyName, JsonArray))
-			{
-				void* ArrayPtr = ArrayProp->ContainerPtrToValuePtr<void>(Actor);
-
-				// Хелпер для работы с массивами
-				FScriptArrayHelper Helper(ArrayProp, ArrayPtr);
-
-				Helper.Resize(JsonArray->Num());
-
-				for (int32 i = 0; i < JsonArray->Num(); ++i)
-				{
-					const TSharedPtr<FJsonValue>& JsonValue = (*JsonArray)[i];
-					FProperty* InnerProp = ArrayProp->Inner;
-					void* ElementPtr = Helper.GetRawPtr(i);
-					LoadJsonValueFromProperty(JsonValue);
-				}
-			}
+			// const TArray<TSharedPtr<FJsonValue>>* JsonArray;
+			// if (JsonObject->TryGetArrayField(PropertyName, JsonArray))
+			// {
+			// 	void* ArrayPtr = ArrayProp->ContainerPtrToValuePtr<void>(Target);
+			//
+			// 	// Хелпер для работы с массивами
+			// 	FScriptArrayHelper Helper(ArrayProp, ArrayPtr);
+			//
+			// 	Helper.Resize(JsonArray->Num());
+			//
+			// 	for (int32 i = 0; i < JsonArray->Num(); ++i)
+			// 	{
+			// 		const TSharedPtr<FJsonValue>& JsonValue = (*JsonArray)[i];
+			// 		FProperty* InnerProp = ArrayProp->Inner;
+			// 		void* ElementPtr = Helper.GetRawPtr(i);
+			// 		LoadJsonValueFromProperty(JsonValue);
+			// 	}
+			// }
 		}
 
 		else if (const FMapProperty* MapProp = CastField<FMapProperty>(Property))
@@ -132,13 +137,22 @@ public:
 
 	static void LoadCustomData(AActor* Actor, const FSaveData& Data)
 	{
+		TSharedPtr<FJsonObject> JsonObject;
+
+		// Parse JSON string from Data.CustomData
+		if (const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Data.CustomData); !FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to parse JSON from CustomData"));
+			return;
+		}
+		
 		for (TFieldIterator<FProperty> PropIt(Actor->GetClass()); PropIt; ++PropIt)
 		{
 			FProperty* Property = *PropIt;
 			if (!Property->HasAnyPropertyFlags(CPF_SaveGame)) continue;
 			
-			TSharedPtr<FJsonObject> JsonObject;
 			FString PropertyName = Property->GetName();
+			
 
 			LoadJsonValueFromProperty(JsonObject, Actor, Property);
 		}
@@ -313,6 +327,7 @@ public:
 		}
 
 		/* Consider adding FClassProperty */
+		// - No
 
 		//if (const FClassProperty) 
 		{

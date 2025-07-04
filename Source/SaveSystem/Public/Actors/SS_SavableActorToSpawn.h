@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GameplayTagAssetInterface.h"
 #include "SS_SavableActor.h"
 #include "SS_SavableActorToSpawn.generated.h"
 

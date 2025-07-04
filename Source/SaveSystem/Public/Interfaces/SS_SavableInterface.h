@@ -21,7 +21,7 @@ struct FSaveData
 	FRotator Rotation = FRotator::ZeroRotator;
 
 	UPROPERTY()
-	FString ActorID;
+	FGuid ActorID;
 
 	UPROPERTY()
 	FString CustomData;
@@ -47,5 +47,6 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Save")
 	void Load(const FSaveData& InData);
 
-	virtual void AssignID();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	FGuid GetID();
 };

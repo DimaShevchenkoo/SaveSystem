@@ -1,13 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Actors/SS_SavableActor.h"
-#include "Components/SS_AutoIDComponent.h"
+
+#include "SS_SaveManager.h"
+#include "Components/SS_IDComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 ASS_SavableActor::ASS_SavableActor()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	AutoIDComponent = CreateDefaultSubobject<USS_AutoIDComponent>("AutoIDComponent");
+	IDComponent = CreateDefaultSubobject<USS_IDComponent>("ID");
 }
 
 void ASS_SavableActor::Save_Implementation(FSaveData& OutData) const
@@ -16,7 +19,6 @@ void ASS_SavableActor::Save_Implementation(FSaveData& OutData) const
 
 	OutData.Location = GetActorLocation();
 	OutData.Rotation = GetActorRotation();
-	OutData.ActorID = AutoIDComponent->ActorID;
 }
 
 void ASS_SavableActor::Load_Implementation(const FSaveData& InData)
@@ -25,4 +27,15 @@ void ASS_SavableActor::Load_Implementation(const FSaveData& InData)
 
 	SetActorLocation(InData.Location);
 	SetActorRotation(InData.Rotation);
+}
+
+void ASS_SavableActor::Destroyed()
+{
+	UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<USS_SaveManager>()->AddDestroyedActor(IDComponent->ID);
+	Super::Destroyed();
+}
+
+FGuid ASS_SavableActor::GetID_Implementation()
+{
+	return IDComponent->ID;
 }

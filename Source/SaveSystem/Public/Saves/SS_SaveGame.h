@@ -19,4 +19,7 @@ public:
 
 	UPROPERTY(SaveGame)
 	TArray<FSaveData> SavedActors;
+
+	UPROPERTY(SaveGame)
+	TSet<FGuid> DestroyedPersistentActors; 
 };
